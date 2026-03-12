@@ -1,0 +1,34 @@
+curriculum-rag/
+│
+├── data/
+│   └── raw/                    # Drop your PDF/markdown files here
+│
+├── ingestion/
+│   ├── __init__.py
+│   ├── loader.py               # PDF loading + table extraction
+│   └── chunker.py              # Chunking logic
+│
+├── retrieval/
+│   ├── __init__.py
+│   ├── embedder.py             # SentenceTransformer embeddings
+│   └── vectorstore.py          # ChromaDB operations (add, query)
+│
+├── generation/
+│   ├── __init__.py
+│   └── llm.py                  # Ollama LLM call + prompt
+│
+├── api/
+│   ├── __init__.py
+│   └── main.py                 # FastAPI app with POST /ask
+│
+├── app/
+│   └── streamlit_app.py        # (Optional Step 10) Simple UI
+│
+├── config/
+│   └── settings.py             # Loads .env, central config
+│
+├── ingest_pipeline.py          # Run once to ingest all docs
+├── test_query.py               # Terminal test script
+├── requirements.txt
+├── .env.example
+└── README.md

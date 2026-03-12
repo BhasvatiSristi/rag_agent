@@ -1,0 +1,28 @@
+# Document loading
+pdfplumber>=0.9.0
+
+# Chunking
+tiktoken>=0.5.0
+
+# Embeddings
+sentence-transformers>=2.2.0
+
+# Vector database
+chromadb>=0.4.0
+
+# LLM (Ollama client)
+ollama>=0.1.0
+
+# API
+fastapi>=0.104.0
+uvicorn>=0.24.0
+pydantic>=2.0.0
+
+# Config
+python-dotenv>=1.0.0
+
+# Optional UI
+streamlit>=1.28.0
+
+# Fix multiprocess compatibility
+multiprocess>=0.70.15
