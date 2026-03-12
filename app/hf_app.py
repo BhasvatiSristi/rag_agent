@@ -222,19 +222,19 @@ div[data-testid="stHorizontalBlock"] {{ margin-bottom: 0 !important; }}
 """, unsafe_allow_html=True)
 
 
-BRANCHES = {{
-    "CSE":    {{"label": "CSE",      "emoji": "💻", "file": "BT-CSE.pdf"}},
-    "CSE-AI": {{"label": "CSE · AI", "emoji": "🤖", "file": "BT-CSEAI.pdf"}},
-    "MECH":   {{"label": "MECH",     "emoji": "⚙️", "file": "BT-ME.pdf"}},
-    "ECE":    {{"label": "ECE",      "emoji": "📡", "file": "BT-ECE.pdf"}},
-    "SM":     {{"label": "SM",       "emoji": "🏭", "file": "BT-SM_UPDATED.pdf"}},
-}}
+BRANCHES = {
+    "CSE":    {"label": "CSE",      "emoji": "💻", "file": "BT-CSE.pdf"},
+    "CSE-AI": {"label": "CSE · AI", "emoji": "🤖", "file": "BT-CSEAI.pdf"},
+    "MECH":   {"label": "MECH",     "emoji": "⚙️", "file": "BT-ME.pdf"},
+    "ECE":    {"label": "ECE",      "emoji": "📡", "file": "BT-ECE.pdf"},
+    "SM":     {"label": "SM",       "emoji": "🏭", "file": "BT-SM_UPDATED.pdf"},
+}
 
-for key, default in {{
+for key, default in {
     "selected_branch": "SM",
     "answer": None,
     "sources": [],
-}}.items():
+}.items():
     if key not in st.session_state:
         st.session_state[key] = default
 
@@ -259,10 +259,10 @@ cols = st.columns(len(BRANCHES))
 for col, (key, info) in zip(cols, BRANCHES.items()):
     with col:
         is_active = st.session_state.selected_branch == key
-        label = f"{{info['emoji']}}  {{info['label']}}"
+        label = f"{info['emoji']}  {info['label']}"
         if is_active:
             st.markdown('<div class="branch-active">', unsafe_allow_html=True)
-        if st.button(label, key=f"branch_{{key}}", use_container_width=True):
+        if st.button(label, key=f"branch_{key}", use_container_width=True):
             if not is_active:
                 st.session_state.selected_branch = key
                 st.session_state.answer = None
@@ -314,11 +314,11 @@ if st.session_state.answer:
     st.markdown(f"""
     <div class="answer-wrap">
         <div class="answer-label">
-            {{active_info['emoji']}} {{active_info['label']}}
+            {active_info['emoji']} {active_info['label']}
             <span style="background:rgba(46,125,209,0.1);color:#2e7dd1;border-radius:100px;padding:2px 10px;font-size:0.7rem;margin-left:6px;">answer</span>
         </div>
-        <div class="answer-body">{{st.session_state.answer}}</div>
+        <div class="answer-body">{st.session_state.answer}</div>
     </div>
-    <div class="sources-row">{{sources_html}}</div>
+    <div class="sources-row">{sources_html}</div>
     <div class="disclaimer">\u26a0\ufe0f Answers may not be accurate. Please verify with the official documents.</div>
     """, unsafe_allow_html=True)
