@@ -14,7 +14,7 @@ Answers are grounded strictly in the curriculum documents (B.Tech 2020).
 - 🏭 Smart Manufacturing
 
 ## Stack
-- Embeddings: BAAI/bge-small-en
+- Embeddings: Cohere API (embed-english-v3.0)
 - Vector DB: ChromaDB
 - LLM: Groq API (llama-3.1-8b-instant)
 - UI: Streamlit

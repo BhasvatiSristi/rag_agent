@@ -1,44 +1,62 @@
 """
 retrieval/embedder.py
-Wraps SentenceTransformers for encoding text into vectors.
-Model: BAAI/bge-small-en (fast, good quality, ~130MB)
+Vectorizes text using Cohere API embeddings (embed-english-v3.0).
+API-based approach: lightweight, fast cold starts, suitable for cloud deployment.
 """
 
-from sentence_transformers import SentenceTransformer
+import os
 from typing import List
-from config.settings import EMBEDDING_MODEL
+import cohere
 
-# Load once at module level (cached after first import)
-_model: SentenceTransformer | None = None
+# Initialize Cohere client once at module level
+_client: cohere.Client | None = None
 
 
-def get_model() -> SentenceTransformer:
-    global _model
-    if _model is None:
-        print(f"  → Loading embedding model: {EMBEDDING_MODEL}")
-        _model = SentenceTransformer(EMBEDDING_MODEL)
-        print(f"  → Embedding model loaded ✅")
-    return _model
+def get_client() -> cohere.Client:
+    """Get or create Cohere API client (singleton pattern)."""
+    global _client
+    if _client is None:
+        api_key = os.getenv("COHERE_API_KEY")
+        if not api_key:
+            raise ValueError(
+                "COHERE_API_KEY environment variable not set. "
+                "Get a free key from https://cohere.com/"
+            )
+        _client = cohere.Client(api_key=api_key)
+        print("  → Cohere API client initialized ✅")
+    return _client
 
 
 def embed_texts(texts: List[str]) -> List[List[float]]:
     """
-    Embed a list of strings.
-    Returns list of float vectors.
+    Embed a list of document chunks using Cohere API.
+    input_type='search_document' optimizes for document retrieval.
+    Returns list of 1024-dim embeddings as floats.
     """
-    model = get_model()
-    # normalize_embeddings=True improves cosine similarity quality for BGE models
-    embeddings = model.encode(texts, normalize_embeddings=True, show_progress_bar=False)
-    return embeddings.tolist()
+    if not texts:
+        return []
+    
+    client = get_client()
+    response = client.embed(
+        texts=texts,
+        model="embed-english-v3.0",
+        input_type="search_document",
+        embedding_types=["float"]
+    )
+    return response.embeddings["float"]
 
 
 def embed_query(query: str) -> List[float]:
     """
-    Embed a single query string.
-    BGE models recommend prepending "Represent this sentence for searching relevant passages: "
-    for query embedding (not for document embedding).
+    Embed a single query string using Cohere API.
+    input_type='search_query' optimizes for query embedding (different from documents).
+    Returns 1024-dim embedding as float list.
     """
-    model = get_model()
-    prefixed = f"Represent this sentence for searching relevant passages: {query}"
-    embedding = model.encode([prefixed], normalize_embeddings=True, show_progress_bar=False)
-    return embedding[0].tolist()
+    client = get_client()
+    response = client.embed(
+        texts=[query],
+        model="embed-english-v3.0",
+        input_type="search_query",
+        embedding_types=["float"]
+    )
+    return response.embeddings["float"][0]

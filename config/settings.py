@@ -11,9 +11,6 @@ load_dotenv()
 # --- Storage ---
 STORAGE_DIR: str = os.getenv("STORAGE_DIR", "./storage")
 
-# --- Embeddings ---
-EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-en")
-
 # --- ChromaDB ---
 CHROMA_PERSIST_DIR: str = os.getenv("CHROMA_PERSIST_DIR", "./storage/chroma_db")
 CHROMA_COLLECTION_NAME: str = os.getenv("CHROMA_COLLECTION_NAME", "curriculum")
