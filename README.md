@@ -16,5 +16,21 @@ Answers are grounded strictly in the curriculum documents (B.Tech 2020).
 ## Stack
 - Embeddings: BAAI/bge-small-en
 - Vector DB: ChromaDB
-- LLM: Mistral (mistral-small-latest)
+- LLM: Groq API (llama-3.1-8b-instant)
 - UI: Streamlit
+
+## Deploy (Render)
+1. Push this repo to GitHub.
+2. In Render, create a Blueprint and select this repo.
+3. Render will read `render.yaml` and create two services:
+	- `rag-agent-api`
+	- `rag-agent-ui`
+4. In Render dashboard, set env vars:
+	- `HF_API_TOKEN` on `rag-agent-api`
+	- `LLM_PROVIDER=hf` on `rag-agent-api`
+	- `HF_LLM_MODEL=deepseek-ai/DeepSeek-R1` on `rag-agent-api`
+	- `API_URL` on `rag-agent-ui` to your API public URL (for example `https://rag-agent-api.onrender.com`).
+5. Open API shell once and run ingestion:
+	- `python ingest_pipeline.py --data-dir ./data/raw`
+
+After ingestion completes, open the Streamlit UI URL and start asking questions.
