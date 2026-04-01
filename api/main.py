@@ -8,9 +8,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 
-from retrieval.vectorstore import query_chunks, collection_size, list_sources
-from generation.llm import generate_answer
-from config.settings import TOP_K
+from retrieval.hybrid import hybrid_query
+from retrieval.vectorstore import collection_size, list_sources
+from generation.generator import generate_answer
+from config.settings import TOP_K, RETRIEVAL_MODE
 
 app = FastAPI(
     title="Curriculum RAG API",
@@ -32,6 +33,7 @@ class AskRequest(BaseModel):
     question: str
     top_k: int = TOP_K
     source_file: Optional[str] = None   # e.g. "BT-ME.pdf" — filters to one branch
+    retrieval_mode: str = RETRIEVAL_MODE
 
 
 class SourceInfo(BaseModel):
@@ -79,10 +81,11 @@ def ask(request: AskRequest):
         raise HTTPException(status_code=503, detail="Vector DB is empty. Run ingest_pipeline.py first.")
 
     # Retrieve — filtered to branch file if provided
-    chunks = query_chunks(
+    chunks = hybrid_query(
         question,
         top_k=request.top_k,
         source_file=request.source_file,
+        mode=request.retrieval_mode,
     )
 
     answer = generate_answer(question, chunks)

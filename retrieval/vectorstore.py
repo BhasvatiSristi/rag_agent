@@ -6,12 +6,14 @@ Supports optional source filtering by filename (for branch-specific search).
 
 import chromadb
 from chromadb.config import Settings
+from pathlib import Path
 from typing import List, Dict, Optional
 from config.settings import CHROMA_PERSIST_DIR, CHROMA_COLLECTION_NAME, TOP_K
 from retrieval.embedder import embed_texts, embed_query
 
 
 def _get_collection():
+    Path(CHROMA_PERSIST_DIR).mkdir(parents=True, exist_ok=True)
     client = chromadb.PersistentClient(
         path=CHROMA_PERSIST_DIR,
         settings=Settings(anonymized_telemetry=False),
@@ -45,7 +47,7 @@ def add_chunks(chunks: List[Dict]) -> None:
     print(f"  → Stored {len(new_chunks)} chunks in ChromaDB ✅")
 
 
-def query_chunks(
+def query_dense(
     question: str,
     top_k: int = TOP_K,
     source_file: Optional[str] = None,   # e.g. "BT-ME.pdf"
@@ -60,9 +62,13 @@ def query_chunks(
     # Build where filter if a specific branch file is requested
     where = {"source": source_file} if source_file else None
 
+    total = collection.count()
+    if total == 0:
+        return []
+
     kwargs = dict(
         query_embeddings=[q_embedding],
-        n_results=min(top_k, collection.count()),
+        n_results=min(top_k, total),
         include=["documents", "metadatas", "distances"],
     )
     if where:
@@ -84,6 +90,14 @@ def query_chunks(
         })
 
     return chunks
+
+
+def query_chunks(
+    question: str,
+    top_k: int = TOP_K,
+    source_file: Optional[str] = None,
+) -> List[Dict]:
+    return query_dense(question, top_k=top_k, source_file=source_file)
 
 
 def collection_size() -> int:

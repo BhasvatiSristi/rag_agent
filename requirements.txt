@@ -10,8 +10,8 @@ sentence-transformers>=2.2.0
 # Vector database
 chromadb>=0.4.0
 
-# LLM (Ollama client)
-ollama>=0.1.0
+# HTTP client
+requests>=2.31.0
 
 # API
 fastapi>=0.104.0

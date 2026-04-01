@@ -280,7 +280,7 @@ div[data-testid="stVerticalBlock"] > div {{
 # ── Branch config ──────────────────────────────────────────────
 BRANCHES = {
     "CSE":    {"label": "CSE",      "emoji": "💻", "file": "BT-CSE.pdf"},
-    "CSE-AI": {"label": "CSE · AI", "emoji": "🤖", "file": "BT-CSEAI.pdf"},
+    "CSE-AI": {"label": "CSE · AI", "emoji": "🤖", "file": "BT-CSE-AI.pdf"},
     "MECH":   {"label": "MECH",     "emoji": "⚙️", "file": "BT-ME.pdf"},
     "ECE":    {"label": "ECE",      "emoji": "📡", "file": "BT-ECE.pdf"},
     "SM":     {"label": "SM",       "emoji": "🏭", "file": "BT-SM_UPDATED.pdf"},
@@ -386,8 +386,8 @@ if ask_clicked and question.strip():
 # ── Answer ─────────────────────────────────────────────────────
 if st.session_state.answer:
     sources_html = "".join(
-        f'<a class="src-tag" href="{s["url"]}" target="_blank">'
-        f'📄 {s["source"]} &middot; p{s["page"]} &middot; {s["score"]:.2f}</a>'
+        f'<span class="src-tag">'
+        f'📄 {s["source"]} &middot; p{s["page"]} &middot; {s["score"]:.2f}</span>'
         for s in st.session_state.sources
     )
     st.markdown(f"""

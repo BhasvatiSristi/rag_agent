@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from ingestion.loader import load_all_pdfs
 from ingestion.chunker import chunk_documents
 from retrieval.vectorstore import add_chunks, collection_size
+from retrieval.bm25 import build_bm25_index
 
 
 def run_ingestion(data_dir: str):
@@ -37,6 +38,10 @@ def run_ingestion(data_dir: str):
     # Step 3: Embed + Store
     print("\n🗄️  Step 3: Embedding and storing in ChromaDB...")
     add_chunks(chunks)
+
+    # Step 4: BM25 Index
+    print("\n🔎 Step 4: Building BM25 index...")
+    build_bm25_index(chunks)
 
     elapsed = time.time() - start
     print("\n" + "=" * 50)

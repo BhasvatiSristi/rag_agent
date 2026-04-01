@@ -52,6 +52,14 @@ def load_pdf(file_path: str) -> List[Dict]:
     if not path.exists():
         raise FileNotFoundError(f"PDF not found: {file_path}")
 
+    # Guard against Git LFS pointer files being mistaken for PDFs.
+    if path.stat().st_size < 1024:
+        head = path.read_text(encoding="utf-8", errors="ignore")
+        if "git-lfs.github.com/spec/v1" in head:
+            raise ValueError(
+                f"{path.name} is a Git LFS pointer, not a real PDF. Run 'git lfs pull' to fetch binary files."
+            )
+
     documents = []
 
     with pdfplumber.open(file_path) as pdf:

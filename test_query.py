@@ -15,8 +15,9 @@ import os
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from retrieval.vectorstore import query_chunks, collection_size
-from generation.llm import generate_answer
+from retrieval.hybrid import hybrid_query
+from retrieval.vectorstore import collection_size
+from generation.generator import generate_answer
 
 
 SAMPLE_QUESTIONS = [
@@ -40,7 +41,7 @@ def run_query(question: str, top_k: int = 5, verbose: bool = False):
         return
 
     # Retrieve
-    chunks = query_chunks(question, top_k=top_k)
+    chunks = hybrid_query(question, top_k=top_k)
 
     if verbose:
         print(f"\n📚 Retrieved {len(chunks)} chunks:")
