@@ -12,6 +12,22 @@ import cohere
 _client: cohere.Client | None = None
 
 
+def _extract_float_embeddings(response) -> List[List[float]]:
+    """Support Cohere SDK response variants for float embeddings."""
+    embeddings = response.embeddings
+
+    # Cohere v5 typed response: response.embeddings.float
+    float_vectors = getattr(embeddings, "float", None)
+    if float_vectors is not None:
+        return float_vectors
+
+    # Backward-compatible fallback for dict-like responses.
+    if isinstance(embeddings, dict) and "float" in embeddings:
+        return embeddings["float"]
+
+    raise TypeError("Unsupported Cohere embeddings response format")
+
+
 def get_client() -> cohere.Client:
     """Get or create Cohere API client (singleton pattern)."""
     global _client
@@ -43,7 +59,7 @@ def embed_texts(texts: List[str]) -> List[List[float]]:
         input_type="search_document",
         embedding_types=["float"]
     )
-    return response.embeddings["float"]
+    return _extract_float_embeddings(response)
 
 
 def embed_query(query: str) -> List[float]:
@@ -59,4 +75,4 @@ def embed_query(query: str) -> List[float]:
         input_type="search_query",
         embedding_types=["float"]
     )
-    return response.embeddings["float"][0]
+    return _extract_float_embeddings(response)[0]
