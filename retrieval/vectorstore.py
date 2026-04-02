@@ -8,20 +8,87 @@ import chromadb
 from chromadb.config import Settings
 from pathlib import Path
 from typing import List, Dict, Optional
+import os
 from config.settings import CHROMA_PERSIST_DIR, CHROMA_COLLECTION_NAME, TOP_K
 from retrieval.embedder import embed_texts, embed_query
 
 
+_DEBUG_LOGGED = False
+
+
+def _log_chroma_debug() -> None:
+    global _DEBUG_LOGGED
+    if _DEBUG_LOGGED:
+        return
+
+    _DEBUG_LOGGED = True
+    storage_dir = Path(CHROMA_PERSIST_DIR).resolve().parent
+    chroma_dir = Path(CHROMA_PERSIST_DIR).resolve()
+
+    print(f"[chroma-debug] CWD: {Path.cwd()}")
+    print(f"[chroma-debug] Persist directory: {chroma_dir}")
+    print(f"[chroma-debug] Persist exists: {chroma_dir.exists()}")
+
+    if storage_dir.exists():
+        print(f"[chroma-debug] Storage contents: {sorted(os.listdir(storage_dir))}")
+    else:
+        print(f"[chroma-debug] Storage directory missing: {storage_dir}")
+
+    if chroma_dir.exists():
+        print(f"[chroma-debug] Chroma dir contents: {sorted(os.listdir(chroma_dir))}")
+    else:
+        print(f"[chroma-debug] Chroma directory missing: {chroma_dir}")
+
+
+def _get_collection_names(client) -> List[str]:
+    names: List[str] = []
+    try:
+        collections = client.list_collections()
+    except Exception:
+        return names
+
+    for item in collections:
+        if isinstance(item, str):
+            names.append(item)
+        else:
+            name = getattr(item, "name", None)
+            if name:
+                names.append(name)
+    return names
+
+
+def _resolve_collection(client):
+    primary = client.get_or_create_collection(
+        name=CHROMA_COLLECTION_NAME,
+        metadata={"hnsw:space": "cosine"},
+    )
+
+    if primary.count() > 0:
+        return primary
+
+    # If configured collection is empty, recover by selecting any populated collection.
+    for name in _get_collection_names(client):
+        if name == CHROMA_COLLECTION_NAME:
+            continue
+        candidate = client.get_collection(name=name)
+        if candidate.count() > 0:
+            print(
+                f"[chroma-debug] Configured collection '{CHROMA_COLLECTION_NAME}' is empty; "
+                f"using populated collection '{name}' instead."
+            )
+            return candidate
+
+    return primary
+
+
 def _get_collection():
+    _log_chroma_debug()
     Path(CHROMA_PERSIST_DIR).mkdir(parents=True, exist_ok=True)
     client = chromadb.PersistentClient(
         path=CHROMA_PERSIST_DIR,
         settings=Settings(anonymized_telemetry=False),
     )
-    collection = client.get_or_create_collection(
-        name=CHROMA_COLLECTION_NAME,
-        metadata={"hnsw:space": "cosine"},
-    )
+    collection = _resolve_collection(client)
     return collection
 
 
