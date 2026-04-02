@@ -9,7 +9,7 @@ from chromadb.config import Settings
 from pathlib import Path
 from typing import List, Dict, Optional
 import os
-from config.settings import CHROMA_PERSIST_DIR, CHROMA_COLLECTION_NAME, TOP_K
+from config.settings import CHROMA_PERSIST_DIR, CHROMA_COLLECTION_NAME, TOP_K, PROJECT_ROOT
 from retrieval.embedder import embed_texts, embed_query
 
 
@@ -22,10 +22,12 @@ def _log_chroma_debug() -> None:
         return
 
     _DEBUG_LOGGED = True
-    storage_dir = Path(CHROMA_PERSIST_DIR).resolve().parent
-    chroma_dir = Path(CHROMA_PERSIST_DIR).resolve()
+    root_dir = Path(PROJECT_ROOT).resolve()
+    storage_dir = root_dir / "storage"
+    chroma_dir = root_dir / "storage" / "chroma_db"
 
-    print(f"[chroma-debug] CWD: {Path.cwd()}")
+    print(f"[chroma-debug] CWD: {os.getcwd()}")
+    print(f"[chroma-debug] Root files: {sorted(os.listdir(root_dir))}")
     print(f"[chroma-debug] Persist directory: {chroma_dir}")
     print(f"[chroma-debug] Persist exists: {chroma_dir.exists()}")
 
@@ -57,13 +59,19 @@ def _get_collection_names(client) -> List[str]:
     return names
 
 
-def _resolve_collection(client):
-    primary = client.get_or_create_collection(
-        name=CHROMA_COLLECTION_NAME,
-        metadata={"hnsw:space": "cosine"},
-    )
+def _resolve_collection(client, create_if_missing: bool):
+    if create_if_missing:
+        primary = client.get_or_create_collection(
+            name=CHROMA_COLLECTION_NAME,
+            metadata={"hnsw:space": "cosine"},
+        )
+    else:
+        try:
+            primary = client.get_collection(name=CHROMA_COLLECTION_NAME)
+        except Exception:
+            primary = None
 
-    if primary.count() > 0:
+    if primary is not None and primary.count() > 0:
         return primary
 
     # If configured collection is empty, recover by selecting any populated collection.
@@ -78,22 +86,40 @@ def _resolve_collection(client):
             )
             return candidate
 
-    return primary
+    # For read paths, do not create a new empty collection implicitly.
+    if primary is not None:
+        return primary
+    return None
 
 
-def _get_collection():
+def _create_client():
+    # Prefer chromadb.Client(Settings(...)) with explicit persistence config.
+    try:
+        return chromadb.Client(
+            Settings(
+                is_persistent=True,
+                persist_directory=CHROMA_PERSIST_DIR,
+                anonymized_telemetry=False,
+            )
+        )
+    except TypeError:
+        # Fallback for environments that only expose PersistentClient.
+        return chromadb.PersistentClient(
+            path=CHROMA_PERSIST_DIR,
+            settings=Settings(anonymized_telemetry=False),
+        )
+
+
+def _get_collection(create_if_missing: bool = False):
     _log_chroma_debug()
     Path(CHROMA_PERSIST_DIR).mkdir(parents=True, exist_ok=True)
-    client = chromadb.PersistentClient(
-        path=CHROMA_PERSIST_DIR,
-        settings=Settings(anonymized_telemetry=False),
-    )
-    collection = _resolve_collection(client)
+    client = _create_client()
+    collection = _resolve_collection(client, create_if_missing=create_if_missing)
     return collection
 
 
 def add_chunks(chunks: List[Dict]) -> None:
-    collection = _get_collection()
+    collection = _get_collection(create_if_missing=True)
     existing = set(collection.get()["ids"])
     new_chunks = [c for c in chunks if c["chunk_id"] not in existing]
 
@@ -123,7 +149,9 @@ def query_dense(
     Retrieve top-k most relevant chunks.
     If source_file is given, only chunks from that file are searched.
     """
-    collection = _get_collection()
+    collection = _get_collection(create_if_missing=False)
+    if collection is None:
+        return []
     q_embedding = embed_query(question)
 
     # Build where filter if a specific branch file is requested
@@ -168,12 +196,15 @@ def query_chunks(
 
 
 def collection_size() -> int:
-    return _get_collection().count()
+    collection = _get_collection(create_if_missing=False)
+    return collection.count() if collection is not None else 0
 
 
 def list_sources() -> List[str]:
     """Return all unique source filenames stored in ChromaDB."""
-    collection = _get_collection()
+    collection = _get_collection(create_if_missing=False)
+    if collection is None:
+        return []
     all_meta = collection.get(include=["metadatas"])["metadatas"]
     sources = sorted(set(m["source"] for m in all_meta if "source" in m))
     return sources
