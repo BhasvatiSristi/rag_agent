@@ -33,5 +33,5 @@ ngrok.yml
 # Generated retrieval storage
 storage/*
 !storage/chroma_db/
-chroma_db/
+!storage/chroma_db/**
 chroma_db_bad_lfs/
