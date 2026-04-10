@@ -1,19 +1,20 @@
 """
-ingest_pipeline.py
+ingestion/ingest_pipeline.py
 Run this ONCE to ingest all PDFs into ChromaDB.
 
 Usage:
-    python ingest_pipeline.py
-    python ingest_pipeline.py --data-dir ./data/raw
+    python -m ingestion.ingest_pipeline
+    python -m ingestion.ingest_pipeline --data-dir ./data/raw
 """
 
 import argparse
 import time
 import sys
-import os
+from pathlib import Path
 
-# Make sure project root is on path
-sys.path.insert(0, os.path.dirname(__file__))
+# Make sure project root is on path when running as a script.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from ingestion.loader import load_all_pdfs
 from ingestion.chunker import chunk_documents
@@ -49,7 +50,7 @@ def run_ingestion(data_dir: str):
     print(f"   Total chunks in DB: {collection_size()}")
     print("=" * 50)
     print("\nYou can now start the API:")
-    print("  uvicorn api.main:app --reload --port 8000\n")
+    print("  uvicorn backend.main:app --reload --port 8000\n")
 
 
 if __name__ == "__main__":

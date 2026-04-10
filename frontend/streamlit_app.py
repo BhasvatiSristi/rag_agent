@@ -1,5 +1,5 @@
 """
-app/streamlit_app.py
+frontend/streamlit_app.py
 Simple Curriculum RAG UI — no custom styling, just clean Streamlit.
 """
 
@@ -69,7 +69,7 @@ if question.strip():
             else:
                 st.error(f"API error: {resp.status_code}")
         except requests.exceptions.ConnectionError:
-            st.error("❌ API offline. Start it with: `uvicorn api.main:app --reload`")
+            st.error("❌ API offline. Start it with: `uvicorn backend.main:app --reload`")
         except Exception as e:
             st.error(f"Error: {e}")
 

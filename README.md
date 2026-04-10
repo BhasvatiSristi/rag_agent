@@ -34,8 +34,8 @@ Answers are grounded strictly in the curriculum documents (B.Tech 2020).
 - `retrieval/bm25.py` stores and queries keyword matches.
 - `retrieval/hybrid.py` merges both retrieval modes.
 - `generation/generator.py` builds the final prompt and calls the LLM.
-- `api/main.py` exposes the FastAPI endpoints.
-- `app/streamlit_app.py` is the UI.
+- `backend/main.py` exposes the FastAPI endpoints.
+- `frontend/streamlit_app.py` is the UI.
 
 ## Before vs After
 ### Before
@@ -61,6 +61,6 @@ Answers are grounded strictly in the curriculum documents (B.Tech 2020).
 	- `HF_LLM_MODEL=deepseek-ai/DeepSeek-R1` on `rag-agent-api`
 	- `API_URL` on `rag-agent-ui` to your API public URL (for example `https://rag-agent-api.onrender.com`).
 5. Open API shell once and run ingestion:
-	- `python ingest_pipeline.py --data-dir ./data/raw`
+	- `python -m ingestion.ingest_pipeline --data-dir ./data/raw`
 
 After ingestion completes, open the Streamlit UI URL and start asking questions.

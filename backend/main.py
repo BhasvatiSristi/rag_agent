@@ -1,5 +1,5 @@
 """
-api/main.py
+backend/main.py
 FastAPI app — POST /ask with optional branch (source file) filtering.
 """
 
@@ -11,8 +11,8 @@ import threading
 from retrieval.hybrid import hybrid_query
 from retrieval.vectorstore import collection_size, list_sources
 from generation.generator import generate_answer
-from ingest_pipeline import run_ingestion
-from api.models import AskRequest, AskResponse, SourceInfo
+from ingestion.ingest_pipeline import run_ingestion
+from backend.models import AskRequest, AskResponse, SourceInfo
 
 
 AUTO_INGEST_ON_EMPTY = os.getenv("AUTO_INGEST_ON_EMPTY", "true").strip().lower() in {"1", "true", "yes", "on"}
