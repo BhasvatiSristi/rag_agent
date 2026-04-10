@@ -5,13 +5,20 @@ FastAPI app — POST /ask with optional branch (source file) filtering.
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List, Optional
+import os
+import threading
 
 from retrieval.hybrid import hybrid_query
 from retrieval.vectorstore import collection_size, list_sources
 from generation.generator import generate_answer
-from config.settings import TOP_K, RETRIEVAL_MODE
+from ingest_pipeline import run_ingestion
+from api.models import AskRequest, AskResponse, SourceInfo
+
+
+AUTO_INGEST_ON_EMPTY = os.getenv("AUTO_INGEST_ON_EMPTY", "true").strip().lower() in {"1", "true", "yes", "on"}
+INGEST_DATA_DIR = os.getenv("INGEST_DATA_DIR", "./data/raw")
+_AUTO_INGEST_ATTEMPTED = False
+_AUTO_INGEST_LOCK = threading.Lock()
 
 app = FastAPI(
     title="Curriculum RAG API",
@@ -27,25 +34,26 @@ app.add_middleware(
 )
 
 
-# --- Models ---
+def _maybe_auto_ingest() -> None:
+    """Attempt one-time ingestion if vector DB is empty and auto-ingest is enabled."""
+    global _AUTO_INGEST_ATTEMPTED
 
-class AskRequest(BaseModel):
-    question: str
-    top_k: int = TOP_K
-    source_file: Optional[str] = None   # e.g. "BT-ME.pdf" — filters to one branch
-    retrieval_mode: str = RETRIEVAL_MODE
+    if not AUTO_INGEST_ON_EMPTY or _AUTO_INGEST_ATTEMPTED:
+        return
 
+    with _AUTO_INGEST_LOCK:
+        if _AUTO_INGEST_ATTEMPTED:
+            return
+        _AUTO_INGEST_ATTEMPTED = True
 
-class SourceInfo(BaseModel):
-    source: str
-    page: int
-    score: float
+        if collection_size() > 0:
+            return
 
-
-class AskResponse(BaseModel):
-    answer: str
-    sources: List[SourceInfo]
-    chunks_searched: int
+        try:
+            run_ingestion(INGEST_DATA_DIR)
+        except Exception as e:
+            # Keep API available even if ingestion fails (e.g., missing keys/files).
+            print(f"[startup] Auto-ingestion skipped/failed: {e}")
 
 
 # --- Endpoints ---
@@ -78,7 +86,7 @@ def ask(request: AskRequest):
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
 
     if collection_size() == 0:
-        raise HTTPException(status_code=503, detail="Vector DB is empty. Run ingest_pipeline.py first.")
+        _maybe_auto_ingest()
 
     # Retrieve — filtered to branch file if provided
     chunks = hybrid_query(

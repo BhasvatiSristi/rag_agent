@@ -13,6 +13,10 @@ from typing import Dict, List, Optional
 from config.settings import BM25_INDEX_PATH
 
 _TOKEN_RE = re.compile(r"[a-zA-Z0-9]+")
+BM25_K1 = 1.5
+BM25_B = 0.75
+_INDEX_CACHE: Optional["BM25Index"] = None
+_INDEX_CACHE_MTIME: float = -1.0
 
 
 class BM25Index:
@@ -60,14 +64,14 @@ class BM25Index:
             score = 0.0
             tf = self.term_tf[i]
             dl = self.doc_len[i] if self.doc_len[i] else 1
-            norm = k1 * (1 - b + b * (dl / self.avg_doc_len)) if self.avg_doc_len else k1
+            norm = BM25_K1 * (1 - BM25_B + BM25_B * (dl / self.avg_doc_len)) if self.avg_doc_len else BM25_K1
 
             for term in q_terms:
                 f = tf.get(term, 0)
                 if f == 0:
                     continue
                 idf = self._idf(term)
-                score += idf * ((f * (k1 + 1)) / (f + norm))
+                score += idf * ((f * (BM25_K1 + 1)) / (f + norm))
 
             if score > 0:
                 scored.append((score, doc))
@@ -111,8 +115,32 @@ def _load_documents() -> List[Dict]:
         return []
 
 
-def query_bm25(question: str, top_k: int = 5, source_file: Optional[str] = None) -> List[Dict]:
+def _get_cached_index() -> Optional[BM25Index]:
+    global _INDEX_CACHE, _INDEX_CACHE_MTIME
+
+    path = _index_path()
+    if not path.exists():
+        _INDEX_CACHE = None
+        _INDEX_CACHE_MTIME = -1.0
+        return None
+
+    mtime = path.stat().st_mtime
+    if _INDEX_CACHE is not None and _INDEX_CACHE_MTIME == mtime:
+        return _INDEX_CACHE
+
     documents = _load_documents()
     if not documents:
+        _INDEX_CACHE = None
+        _INDEX_CACHE_MTIME = mtime
+        return None
+
+    _INDEX_CACHE = BM25Index(documents)
+    _INDEX_CACHE_MTIME = mtime
+    return _INDEX_CACHE
+
+
+def query_bm25(question: str, top_k: int = 5, source_file: Optional[str] = None) -> List[Dict]:
+    index = _get_cached_index()
+    if index is None:
         return []
-    return BM25Index(documents).query(question, top_k=top_k, source_file=source_file)
+    return index.query(question, top_k=top_k, source_file=source_file)

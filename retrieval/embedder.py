@@ -5,11 +5,11 @@ API-based approach: lightweight, fast cold starts, suitable for cloud deployment
 """
 
 import os
-from typing import List
+from typing import List, Optional
 import cohere
 
 # Initialize Cohere client once at module level
-_client: cohere.Client | None = None
+_client: Optional[cohere.Client] = None
 
 
 def _extract_float_embeddings(response) -> List[List[float]]:

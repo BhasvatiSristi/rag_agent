@@ -8,39 +8,8 @@ import chromadb
 from chromadb.config import Settings
 from pathlib import Path
 from typing import List, Dict, Optional
-import os
-from config.settings import CHROMA_PERSIST_DIR, CHROMA_COLLECTION_NAME, TOP_K, PROJECT_ROOT
+from config.settings import CHROMA_PERSIST_DIR, CHROMA_COLLECTION_NAME, TOP_K
 from retrieval.embedder import embed_texts, embed_query
-
-
-_DEBUG_LOGGED = False
-
-
-def _log_chroma_debug() -> None:
-    global _DEBUG_LOGGED
-    if _DEBUG_LOGGED:
-        return
-
-    _DEBUG_LOGGED = True
-    root_dir = Path(PROJECT_ROOT).resolve()
-    storage_dir = root_dir / "storage"
-    chroma_dir = root_dir / "storage" / "chroma_db"
-
-    print(f"[chroma-debug] CWD: {os.getcwd()}")
-    print(f"[chroma-debug] Root files: {sorted(os.listdir(root_dir))}")
-    print(f"[chroma-debug] Persist directory: {chroma_dir}")
-    print(f"[chroma-debug] Persist exists: {chroma_dir.exists()}")
-
-    if storage_dir.exists():
-        print(f"[chroma-debug] Storage contents: {sorted(os.listdir(storage_dir))}")
-    else:
-        print(f"[chroma-debug] Storage directory missing: {storage_dir}")
-
-    if chroma_dir.exists():
-        print(f"[chroma-debug] Chroma dir contents: {sorted(os.listdir(chroma_dir))}")
-    else:
-        print(f"[chroma-debug] Chroma directory missing: {chroma_dir}")
-
 
 def _get_collection_names(client) -> List[str]:
     names: List[str] = []
@@ -74,26 +43,18 @@ def _resolve_collection(client, create_if_missing: bool):
     if primary is not None and primary.count() > 0:
         return primary
 
-    # If configured collection is empty, recover by selecting any populated collection.
     for name in _get_collection_names(client):
         if name == CHROMA_COLLECTION_NAME:
             continue
         candidate = client.get_collection(name=name)
         if candidate.count() > 0:
-            print(
-                f"[chroma-debug] Configured collection '{CHROMA_COLLECTION_NAME}' is empty; "
-                f"using populated collection '{name}' instead."
-            )
+            print(f"⚠️  Chroma collection '{CHROMA_COLLECTION_NAME}' is empty; using '{name}' instead.")
             return candidate
 
-    # For read paths, do not create a new empty collection implicitly.
-    if primary is not None:
-        return primary
-    return None
+    return primary
 
 
 def _create_client():
-    # Prefer chromadb.Client(Settings(...)) with explicit persistence config.
     try:
         return chromadb.Client(
             Settings(
@@ -103,7 +64,6 @@ def _create_client():
             )
         )
     except TypeError:
-        # Fallback for environments that only expose PersistentClient.
         return chromadb.PersistentClient(
             path=CHROMA_PERSIST_DIR,
             settings=Settings(anonymized_telemetry=False),
@@ -111,7 +71,6 @@ def _create_client():
 
 
 def _get_collection(create_if_missing: bool = False):
-    _log_chroma_debug()
     Path(CHROMA_PERSIST_DIR).mkdir(parents=True, exist_ok=True)
     client = _create_client()
     collection = _resolve_collection(client, create_if_missing=create_if_missing)
@@ -143,18 +102,13 @@ def add_chunks(chunks: List[Dict]) -> None:
 def query_dense(
     question: str,
     top_k: int = TOP_K,
-    source_file: Optional[str] = None,   # e.g. "BT-ME.pdf"
+    source_file: Optional[str] = None,
 ) -> List[Dict]:
-    """
-    Retrieve top-k most relevant chunks.
-    If source_file is given, only chunks from that file are searched.
-    """
     collection = _get_collection(create_if_missing=False)
     if collection is None:
         return []
     q_embedding = embed_query(question)
 
-    # Build where filter if a specific branch file is requested
     where = {"source": source_file} if source_file else None
 
     total = collection.count()
@@ -185,14 +139,6 @@ def query_dense(
         })
 
     return chunks
-
-
-def query_chunks(
-    question: str,
-    top_k: int = TOP_K,
-    source_file: Optional[str] = None,
-) -> List[Dict]:
-    return query_dense(question, top_k=top_k, source_file=source_file)
 
 
 def collection_size() -> int:
