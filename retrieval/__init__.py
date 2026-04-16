@@ -1,4 +1,20 @@
-"""Retrieval package."""
+"""
+Purpose:
+
+* Exposes retrieval functions from dense, BM25, and hybrid modules.
+
+Inputs:
+
+* No direct runtime inputs in this file.
+
+Outputs:
+
+* Re-exported retrieval functions for simpler imports.
+
+Used in:
+
+* API routes and scripts that need retrieval utilities.
+"""
 
 from .hybrid import hybrid_query
 from .vectorstore import query_dense

@@ -1,6 +1,19 @@
 """
-config/settings.py
-Central configuration — loads from .env file.
+Purpose:
+
+* Stores central configuration values for the whole project.
+
+Inputs:
+
+* Environment variables from the system and .env file.
+
+Outputs:
+
+* Module-level constants used by ingestion, retrieval, generation, and API layers.
+
+Used in:
+
+* Imported by many modules to keep configuration in one place.
 """
 
 import os
@@ -14,7 +27,24 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _resolve_from_root(value: str) -> str:
-	"""Resolve relative paths from project root for consistent cloud/runtime behavior."""
+	"""
+	Convert a path value to an absolute path based on the project root.
+
+	Parameters:
+
+	* value (str): relative or absolute path string from environment/config.
+
+	Returns:
+
+	* str: absolute path string.
+
+	Steps:
+
+	1. Build a Path object from the input.
+	2. If already absolute, return it directly.
+	3. If relative, join it with PROJECT_ROOT.
+	4. Return the resolved absolute path.
+	"""
 	path = Path(value)
 	if path.is_absolute():
 		return str(path)

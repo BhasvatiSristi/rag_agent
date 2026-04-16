@@ -1,6 +1,20 @@
 """
-backend/main.py
-FastAPI app — POST /ask with optional branch (source file) filtering.
+Purpose:
+
+* Defines the FastAPI application and HTTP endpoints.
+
+Inputs:
+
+* HTTP requests from clients (question text, optional source file, retrieval settings).
+
+Outputs:
+
+* JSON responses for API metadata, health status, and generated answers.
+
+Used in:
+
+* Started by the ASGI server (for example: uvicorn backend.main:app --reload).
+* Called by the Streamlit frontend and any API client.
 """
 
 from fastapi import FastAPI, HTTPException
@@ -35,7 +49,24 @@ app.add_middleware(
 
 
 def _maybe_auto_ingest() -> None:
-    """Attempt one-time ingestion if vector DB is empty and auto-ingest is enabled."""
+    """
+    Run ingestion once when the vector database is empty.
+
+    Parameters:
+
+    * None
+
+    Returns:
+
+    * None
+
+    Steps:
+
+    1. Check whether auto-ingest is enabled and not already attempted.
+    2. Use a lock so only one thread can trigger ingestion.
+    3. Skip if the collection already has data.
+    4. Run ingestion and keep API alive even if ingestion fails.
+    """
     global _AUTO_INGEST_ATTEMPTED
 
     if not AUTO_INGEST_ON_EMPTY or _AUTO_INGEST_ATTEMPTED:
@@ -60,6 +91,22 @@ def _maybe_auto_ingest() -> None:
 
 @app.get("/")
 def root():
+    """
+    Return basic API information.
+
+    Parameters:
+
+    * None
+
+    Returns:
+
+    * dict: title, version, and helpful endpoint URLs.
+
+    Steps:
+
+    1. Build a small metadata dictionary.
+    2. Return it as the root endpoint response.
+    """
     return {
         "title": "Curriculum RAG API",
         "version": "1.0.0",
@@ -71,6 +118,23 @@ def root():
 
 @app.get("/health")
 def health():
+    """
+    Return current service health and data status.
+
+    Parameters:
+
+    * None
+
+    Returns:
+
+    * dict: API status, number of chunks, and available source files.
+
+    Steps:
+
+    1. Check current collection size.
+    2. List source files stored in the vector database.
+    3. Return all health details in one response.
+    """
     return {
         "status": "ok",
         "chunks_in_db": collection_size(),
@@ -80,6 +144,25 @@ def health():
 
 @app.post("/ask", response_model=AskResponse)
 def ask(request: AskRequest):
+    """
+    Answer a user question using retrieved curriculum chunks.
+
+    Parameters:
+
+    * request (AskRequest): question text and retrieval options.
+
+    Returns:
+
+    * AskResponse: generated answer, source list, and chunk count.
+
+    Steps:
+
+    1. Clean and validate the incoming question.
+    2. Auto-ingest once if the database is still empty.
+    3. Retrieve relevant chunks using the selected retrieval mode.
+    4. Generate an answer from retrieved context.
+    5. Build a unique source list and return the final response.
+    """
     question = request.question.strip()
 
     if not question:

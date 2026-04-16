@@ -1,6 +1,19 @@
 """
-generation/generator.py
-Prompt building and LLM API calls for grounded curriculum answers.
+Purpose:
+
+* Builds prompts and generates answers using the Groq LLM API.
+
+Inputs:
+
+* User question text and retrieved curriculum chunks.
+
+Outputs:
+
+* Final answer string grounded in provided context.
+
+Used in:
+
+* Called by API and terminal test flow after retrieval.
 """
 
 import os
@@ -33,6 +46,25 @@ RULES:
 
 
 def build_prompt(question: str, context_chunks: List[Dict]) -> str:
+    """
+    Build the final prompt string from question and retrieved chunks.
+
+    Parameters:
+
+    * question (str): user question.
+    * context_chunks (List[Dict]): retrieved chunk dictionaries.
+
+    Returns:
+
+    * str: combined prompt with context and question.
+
+    Steps:
+
+    1. Format each chunk with source and page labels.
+    2. Join chunk blocks with separators.
+    3. Append user question and answer instruction.
+    4. Return the final prompt text.
+    """
     context_parts = []
     for i, chunk in enumerate(context_chunks, 1):
         context_parts.append(
@@ -51,6 +83,25 @@ Read the context carefully, identify the relevant semester/branch, and answer cl
 
 
 def _generate_with_groq(prompt: str) -> str:
+    """
+    Send prompt to Groq chat completion API with retry handling.
+
+    Parameters:
+
+    * prompt (str): full prompt text including context.
+
+    Returns:
+
+    * str: generated answer text, or readable error message.
+
+    Steps:
+
+    1. Validate API key presence.
+    2. Build request headers and payload.
+    3. Call API with retry logic for rate limits and server errors.
+    4. Return model response text on success.
+    5. Return a friendly error message on final failure.
+    """
     if not GROQ_API_KEY:
         return "Error: GROQ_API_KEY not set. Add it to your .env file."
 
@@ -120,6 +171,25 @@ def _generate_with_groq(prompt: str) -> str:
 
 
 def generate_answer(question: str, context_chunks: List[Dict]) -> str:
+    """
+    Generate final answer from question and retrieved context chunks.
+
+    Parameters:
+
+    * question (str): user question text.
+    * context_chunks (List[Dict]): retrieval output chunks.
+
+    Returns:
+
+    * str: generated answer, or fallback no-answer message.
+
+    Steps:
+
+    1. Return fallback message if no context is available.
+    2. Build prompt with context and question.
+    3. Send prompt to Groq generator.
+    4. Return generated text.
+    """
     if not context_chunks:
         return NO_ANSWER_MSG
 

@@ -1,7 +1,19 @@
 """
-ingestion/chunker.py
-Splits page documents into overlapping chunks (~700 tokens, 100 overlap).
-Uses tiktoken for accurate token counting.
+Purpose:
+
+* Splits page-level text into smaller overlapping chunks for retrieval.
+
+Inputs:
+
+* Document dictionaries containing page text, source file, and page number.
+
+Outputs:
+
+* Chunk dictionaries with chunk text and chunk identifiers.
+
+Used in:
+
+* Called by the ingestion pipeline before embedding and indexing.
 """
 
 import re
@@ -14,6 +26,24 @@ from config.settings import CHUNK_SIZE, CHUNK_OVERLAP
 _tokenizer = tiktoken.get_encoding("cl100k_base")
 
 def _split_by_semester(text: str) -> List[str]:
+    """
+    Split text into semester blocks when semester headings are present.
+
+    Parameters:
+
+    * text (str): full page text.
+
+    Returns:
+
+    * List[str]: semester-based text blocks, or the original text as one block.
+
+    Steps:
+
+    1. Split text using the pattern "Semester N".
+    2. Pair each semester label with its content.
+    3. Keep non-empty blocks only.
+    4. Return blocks, or fallback to the original text.
+    """
     parts = re.split(r"(Semester \d+)", text)
     if len(parts) < 3:
         return [text]
@@ -27,6 +57,27 @@ def _split_by_semester(text: str) -> List[str]:
 
 
 def _split_text_into_chunks(text: str, chunk_size: int, overlap: int) -> List[str]:
+    """
+    Split a text block into token-aware overlapping chunks.
+
+    Parameters:
+
+    * text (str): input page text.
+    * chunk_size (int): maximum tokens per chunk.
+    * overlap (int): approximate token overlap between neighboring chunks.
+
+    Returns:
+
+    * List[str]: ordered chunk strings.
+
+    Steps:
+
+    1. Split text into semester blocks.
+    2. Break each block into line segments.
+    3. Add segments until token limit is reached.
+    4. Save the chunk and keep overlap from the end.
+    5. Continue until all segments are processed.
+    """
     semester_blocks = _split_by_semester(text)
     all_chunks = []
 
@@ -64,7 +115,23 @@ def _split_text_into_chunks(text: str, chunk_size: int, overlap: int) -> List[st
 
 def chunk_documents(documents: List[Dict]) -> List[Dict]:
     """
-    Take page-level documents and split into smaller chunks.
+    Convert page-level documents into chunk-level records.
+
+    Parameters:
+
+    * documents (List[Dict]): page records with text, source, and page.
+
+    Returns:
+
+    * List[Dict]: chunk records ready for embedding and storage.
+
+    Steps:
+
+    1. Loop through each page document.
+    2. Split page text into overlapping chunks.
+    3. Create chunk metadata (source, page, chunk_id).
+    4. Collect all chunk records into one list.
+    5. Return the full chunk list.
 
     Each chunk:
     {

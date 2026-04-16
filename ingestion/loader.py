@@ -1,7 +1,19 @@
 """
-ingestion/loader.py
-Loads PDF files and extracts text + tables.
-Tables are converted to structured readable sentences for better embedding.
+Purpose:
+
+* Loads curriculum PDF files and extracts page-level text content.
+
+Inputs:
+
+* A single PDF file path or a directory containing multiple PDF files.
+
+Outputs:
+
+* A list of document dictionaries with text, source filename, and page number.
+
+Used in:
+
+* Called by the ingestion pipeline before chunking and indexing.
 """
 
 import pdfplumber
@@ -9,6 +21,25 @@ from pathlib import Path
 from typing import List, Dict
 
 def load_pdf(file_path: str) -> List[Dict]:
+    """
+    Load one PDF and extract text from each page.
+
+    Parameters:
+
+    * file_path (str): path to the PDF file.
+
+    Returns:
+
+    * List[Dict]: page-level records with text, source, and page.
+
+    Steps:
+
+    1. Check that the file exists.
+    2. Detect and block Git LFS pointer files.
+    3. Open the PDF with pdfplumber.
+    4. Read text page by page.
+    5. Keep non-empty pages and return them.
+    """
     path = Path(file_path)
     if not path.exists():
         raise FileNotFoundError(f"PDF not found: {file_path}")
@@ -40,8 +71,23 @@ def load_pdf(file_path: str) -> List[Dict]:
 
 def load_all_pdfs(data_dir: str) -> List[Dict]:
     """
-    Load all PDFs from a directory.
-    Returns combined list of page documents.
+    Load all PDF files from one directory.
+
+    Parameters:
+
+    * data_dir (str): directory path that contains PDF files.
+
+    Returns:
+
+    * List[Dict]: combined page-level records from all PDFs.
+
+    Steps:
+
+    1. Find all .pdf files in the given directory.
+    2. Raise an error if no PDFs are found.
+    3. Load each PDF using load_pdf.
+    4. Merge all page records into one list.
+    5. Return the combined result.
     """
     data_path = Path(data_dir)
     pdf_files = list(data_path.glob("*.pdf"))

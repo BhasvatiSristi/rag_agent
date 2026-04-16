@@ -1,6 +1,19 @@
 """
-ingestion/ingest_pipeline.py
-Run this ONCE to ingest all PDFs into ChromaDB.
+Purpose:
+
+* Runs the full ingestion flow from PDF loading to searchable indexes.
+
+Inputs:
+
+* A directory path that contains source PDF curriculum files.
+
+Outputs:
+
+* Stored chunks in ChromaDB and a BM25 JSON index on disk.
+
+Used in:
+
+* Run as a script before starting the API, or called by auto-ingestion.
 
 Usage:
     python -m ingestion.ingest_pipeline
@@ -23,6 +36,25 @@ from retrieval.bm25 import build_bm25_index
 
 
 def run_ingestion(data_dir: str):
+    """
+    Execute all ingestion steps for a directory of PDF files.
+
+    Parameters:
+
+    * data_dir (str): path to the folder that contains PDFs.
+
+    Returns:
+
+    * None
+
+    Steps:
+
+    1. Load all PDF pages from the input directory.
+    2. Split pages into chunks.
+    3. Embed and store chunks in ChromaDB.
+    4. Build and save BM25 index.
+    5. Print summary information.
+    """
     start = time.time()
     print("=" * 50)
     print("🚀 Starting curriculum ingestion pipeline")

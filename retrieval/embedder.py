@@ -1,7 +1,19 @@
 """
-retrieval/embedder.py
-Vectorizes text using Cohere API embeddings (embed-english-v3.0).
-API-based approach: lightweight, fast cold starts, suitable for cloud deployment.
+Purpose:
+
+* Creates vector embeddings for documents and user queries using Cohere.
+
+Inputs:
+
+* Text chunks and query strings.
+
+Outputs:
+
+* Float embedding vectors used by dense retrieval.
+
+Used in:
+
+* Called by vectorstore functions during ingestion and query time.
 """
 
 import os
@@ -13,7 +25,24 @@ _client: Optional[cohere.Client] = None
 
 
 def _extract_float_embeddings(response) -> List[List[float]]:
-    """Support Cohere SDK response variants for float embeddings."""
+    """
+    Extract float embeddings from different Cohere SDK response formats.
+
+    Parameters:
+
+    * response: Cohere embed API response object.
+
+    Returns:
+
+    * List[List[float]]: list of float embedding vectors.
+
+    Steps:
+
+    1. Read embeddings field from the response.
+    2. Try typed response format first.
+    3. Fallback to dict format for compatibility.
+    4. Raise error if format is unsupported.
+    """
     embeddings = response.embeddings
 
     # Cohere v5 typed response: response.embeddings.float
@@ -29,7 +58,24 @@ def _extract_float_embeddings(response) -> List[List[float]]:
 
 
 def get_client() -> cohere.Client:
-    """Get or create Cohere API client (singleton pattern)."""
+    """
+    Get a shared Cohere client instance.
+
+    Parameters:
+
+    * None
+
+    Returns:
+
+    * cohere.Client: initialized API client.
+
+    Steps:
+
+    1. Reuse cached client if already created.
+    2. Read API key from environment.
+    3. Raise a clear error if key is missing.
+    4. Create and cache client for later calls.
+    """
     global _client
     if _client is None:
         api_key = os.getenv("COHERE_API_KEY")
@@ -45,9 +91,22 @@ def get_client() -> cohere.Client:
 
 def embed_texts(texts: List[str]) -> List[List[float]]:
     """
-    Embed a list of document chunks using Cohere API.
-    input_type='search_document' optimizes for document retrieval.
-    Returns list of 1024-dim embeddings as floats.
+    Embed document chunks for dense retrieval.
+
+    Parameters:
+
+    * texts (List[str]): chunk texts to embed.
+
+    Returns:
+
+    * List[List[float]]: embedding vectors for all input texts.
+
+    Steps:
+
+    1. Return empty list for empty input.
+    2. Get initialized Cohere client.
+    3. Call Cohere embed API with search_document input type.
+    4. Extract and return float vectors.
     """
     if not texts:
         return []
@@ -64,9 +123,21 @@ def embed_texts(texts: List[str]) -> List[List[float]]:
 
 def embed_query(query: str) -> List[float]:
     """
-    Embed a single query string using Cohere API.
-    input_type='search_query' optimizes for query embedding (different from documents).
-    Returns 1024-dim embedding as float list.
+    Embed one user query string for dense retrieval.
+
+    Parameters:
+
+    * query (str): question text from user.
+
+    Returns:
+
+    * List[float]: query embedding vector.
+
+    Steps:
+
+    1. Get initialized Cohere client.
+    2. Call embed API using search_query input type.
+    3. Extract first embedding vector and return it.
     """
     client = get_client()
     response = client.embed(

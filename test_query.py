@@ -1,7 +1,19 @@
 """
-test_query.py
-Test the RAG pipeline from the terminal WITHOUT starting the API.
-Runs the full retrieval + generation chain directly.
+Purpose:
+
+* Tests the retrieval and generation pipeline from the terminal.
+
+Inputs:
+
+* Command-line flags and optional interactive user questions.
+
+Outputs:
+
+* Printed answers, retrieval details, and source references.
+
+Used in:
+
+* Local debugging without starting the FastAPI server.
 
 Usage:
     python test_query.py
@@ -32,6 +44,27 @@ SAMPLE_QUESTIONS = [
 
 
 def run_query(question: str, top_k: int = 5, verbose: bool = False):
+    """
+    Run one full question-answer flow in terminal mode.
+
+    Parameters:
+
+    * question (str): question to ask the RAG system.
+    * top_k (int): number of chunks to retrieve.
+    * verbose (bool): whether to print retrieved chunk previews.
+
+    Returns:
+
+    * None
+
+    Steps:
+
+    1. Print question header.
+    2. Ensure vector database has data.
+    3. Retrieve top chunks.
+    4. Optionally print chunk details.
+    5. Generate and print final answer and source summary.
+    """
     print("\n" + "=" * 60)
     print(f"❓ Question: {question}")
     print("=" * 60)
@@ -64,6 +97,24 @@ def run_query(question: str, top_k: int = 5, verbose: bool = False):
 
 
 def interactive_mode(top_k: int):
+    """
+    Start an interactive terminal loop for repeated questions.
+
+    Parameters:
+
+    * top_k (int): number of chunks to retrieve per question.
+
+    Returns:
+
+    * None
+
+    Steps:
+
+    1. Print interactive mode instructions.
+    2. Read user input in a loop.
+    3. Exit on quit commands or interrupts.
+    4. Send valid questions to run_query.
+    """
     print("\n" + "=" * 60)
     print("🎓 Curriculum RAG — Interactive Mode")
     print("   Type your question and press Enter.")

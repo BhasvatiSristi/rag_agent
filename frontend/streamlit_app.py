@@ -1,6 +1,19 @@
 """
-frontend/streamlit_app.py
-Simple Curriculum RAG UI — no custom styling, just clean Streamlit.
+Purpose:
+
+* Provides a Streamlit user interface to ask curriculum questions.
+
+Inputs:
+
+* User-selected branch and question text from UI widgets.
+
+Outputs:
+
+* Visual answer display and source list fetched from FastAPI.
+
+Used in:
+
+* Run as frontend app that calls the API ask endpoint.
 """
 
 import sys
