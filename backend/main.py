@@ -120,11 +120,8 @@ def root():
 def health():
     """
     Return current service health and data status.
-
     Parameters:
-
     * None
-
     Returns:
 
     * dict: API status, number of chunks, and available source files.
