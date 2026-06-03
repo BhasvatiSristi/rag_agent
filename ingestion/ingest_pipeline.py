@@ -22,12 +22,7 @@ Usage:
 
 import argparse
 import time
-import sys
 from pathlib import Path
-
-# Make sure project root is on path when running as a script.
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
 
 from ingestion.loader import load_all_pdfs
 from ingestion.chunker import chunk_documents
@@ -94,4 +89,3 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     run_ingestion(args.data_dir)
-    sys.exit(0)

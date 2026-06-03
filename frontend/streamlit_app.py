@@ -16,9 +16,7 @@ Used in:
 * Run as frontend app that calls the API ask endpoint.
 """
 
-import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import streamlit as st
 import requests

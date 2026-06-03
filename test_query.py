@@ -22,10 +22,7 @@ Usage:
 """
 
 import argparse
-import sys
 import os
-
-sys.path.insert(0, os.path.dirname(__file__))
 
 from retrieval.hybrid import hybrid_query
 from retrieval.vectorstore import collection_size
@@ -152,5 +149,3 @@ if __name__ == "__main__":
         run_query(args.question, top_k=args.top_k, verbose=args.verbose)
     else:
         interactive_mode(top_k=args.top_k)
-    
-    sys.exit(0)
