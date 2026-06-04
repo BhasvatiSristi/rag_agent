@@ -54,7 +54,13 @@ st.write("Ask questions about the B.Tech curriculum")
 
 # ── Branch selector ────────────────────────────────────────────
 st.write("**Select a branch:**")
-selected = st.radio("", list(BRANCHES.keys()), horizontal=True, key="branch_select")
+selected = st.radio(
+    "Select a branch",
+    list(BRANCHES.keys()),
+    horizontal=True,
+    key="branch_select",
+    label_visibility="collapsed",
+)
 st.session_state.selected_branch = selected
 
 # ── Question input ─────────────────────────────────────────────
