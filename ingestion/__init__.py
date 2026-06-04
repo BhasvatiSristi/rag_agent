@@ -13,5 +13,5 @@ Outputs:
 
 Used in:
 
-* Ingestion pipeline and API auto-ingestion imports.
+* Ingestion pipeline imports.
 """

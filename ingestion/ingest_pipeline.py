@@ -13,7 +13,7 @@ Outputs:
 
 Used in:
 
-* Run as a script before starting the API, or called by auto-ingestion.
+* Run manually before starting the API.
 
 Usage:
     python -m ingestion.ingest_pipeline
