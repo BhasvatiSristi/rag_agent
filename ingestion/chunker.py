@@ -22,7 +22,6 @@ from typing import List, Dict
 from config.settings import CHUNK_SIZE, CHUNK_OVERLAP
 
 
-# Use cl100k_base tokenizer (compatible with most modern LLMs)
 _tokenizer = tiktoken.get_encoding("cl100k_base")
 
 def _split_by_semester(text: str) -> List[str]:
